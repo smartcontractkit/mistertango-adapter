@@ -37,9 +37,8 @@ const createRequest = (input, callback) => {
 
     let cmdUrl = "/v1/transaction/" + method;
     let fullUrl = API_URL + cmdUrl;
-    let nonce = getNonce();
-    queryObj.nonce = nonce;
-    let signature = makeSignature(nonce, queryObj, cmdUrl);
+    queryObj.nonce = getNonce();
+    let signature = makeSignature(queryObj, cmdUrl);
     let formData = querystring.stringify(queryObj);
 
     const options = {
@@ -48,7 +47,7 @@ const createRequest = (input, callback) => {
         headers: {
             "X-API-KEY": API_KEY,
             "X-API-SIGN": signature,
-            "X-API-NONCE": nonce,
+            "X-API-NONCE": queryObj.nonce,
             "Content-Type": "application/x-www-form-urlencoded"
         },
         body: formData,
@@ -77,11 +76,11 @@ const createRequest = (input, callback) => {
 // Create nonce in the form of a timestamp
 const getNonce = () => new Date().getTime() + '' + parseInt(ms.now() / 100000000);
 
-// makeSignature takes nonce, data object and the command_url (/v1/...), and creates a valid
+// makeSignature takes data object and the command_url (/v1/...), and creates a valid
 // base64-encoded SHA512-hash of command_url + sha256(nonce + querystring.stringify(data))
 // using the API_SECRET.
-const makeSignature = (nonce, data, command_url) => {
-    let hashString = nonce + querystring.stringify(data);
+const makeSignature = (data, command_url) => {
+    let hashString = data.nonce + querystring.stringify(data);
     let hashed = CryptoJS.SHA256(hashString).toString(CryptoJS.enc.Latin1);
     let encoded = CryptoJS.enc.Latin1.parse(command_url + hashed);
     return CryptoJS.HmacSHA512(encoded, API_SECRET).toString(CryptoJS.enc.Base64);
